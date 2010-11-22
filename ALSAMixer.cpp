@@ -60,12 +60,12 @@ struct alsa_properties_t
 #define ALSA_PROP(dev, name, out, in) \
     {\
         {dev, "alsa.mixer.playback." name, out, NULL},\
-        {dev, "alsa.mixer.capture." name, in, NULL}\
+        {dev, "alsa.mixer.record." name, in, NULL}\
     }
 
 static alsa_properties_t
 mixerMasterProp[SND_PCM_STREAM_LAST+1] =
-        ALSA_PROP(AudioSystem::DEVICE_OUT_ALL, "master", "PCM", "Capture");
+        ALSA_PROP(AudioSystem::DEVICE_OUT_ALL, "master", "Speaker", "Capture");
 
 static alsa_properties_t
 mixerProp[][SND_PCM_STREAM_LAST+1] = {
@@ -161,8 +161,8 @@ ALSAMixer::ALSAMixer()
 {
     int err;
 
-    initMixer (&mMixer[SND_PCM_STREAM_PLAYBACK], "AndroidOut");
-    initMixer (&mMixer[SND_PCM_STREAM_CAPTURE], "AndroidIn");
+    initMixer (&mMixer[SND_PCM_STREAM_PLAYBACK], "AndroidPlayback");
+    initMixer (&mMixer[SND_PCM_STREAM_CAPTURE], "AndroidRecord");
 
     snd_mixer_selem_id_t *sid;
     snd_mixer_selem_id_alloca(&sid);
@@ -204,7 +204,7 @@ ALSAMixer::ALSAMixer()
             }
         }
 
-        LOGV("Mixer: master '%s' %s.", info->name, info->elem ? "found" : "not found");
+        LOGD("Mixer: master '%s' %s.", info->name, info->elem ? "found" : "not found");
 
         for (int j = 0; mixerProp[j][i].device; j++) {
 
@@ -240,10 +240,10 @@ ALSAMixer::ALSAMixer()
                     break;
                 }
             }
-            LOGV("Mixer: route '%s' %s.", info->name, info->elem ? "found" : "not found");
+            LOGD("Mixer: route '%s' %s.", info->name, info->elem ? "found" : "not found");
         }
     }
-    LOGV("mixer initialized.");
+    LOGD("mixer initialized.");
 }
 
 ALSAMixer::~ALSAMixer()
@@ -261,7 +261,7 @@ ALSAMixer::~ALSAMixer()
             }
         }
     }
-    LOGV("mixer destroyed.");
+    LOGD("mixer destroyed.");
 }
 
 status_t ALSAMixer::setMasterVolume(float volume)

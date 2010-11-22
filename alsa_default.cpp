@@ -94,7 +94,7 @@ static const int DEFAULT_SAMPLE_RATE = ALSA_DEFAULT_SAMPLE_RATE;
 
 static const char *devicePrefix[SND_PCM_STREAM_LAST + 1] = {
         /* SND_PCM_STREAM_PLAYBACK : */"AndroidPlayback",
-        /* SND_PCM_STREAM_CAPTURE  : */"AndroidCapture",
+        /* SND_PCM_STREAM_CAPTURE  : */"AndroidRecord",
 };
 
 static alsa_handle_t _defaultsOut = {
@@ -106,8 +106,8 @@ static alsa_handle_t _defaultsOut = {
     format      : SND_PCM_FORMAT_S16_LE, // AudioSystem::PCM_16_BIT
     channels    : 2,
     sampleRate  : DEFAULT_SAMPLE_RATE,
-    latency     : 200000, // Desired Delay in usec
-    bufferSize  : DEFAULT_SAMPLE_RATE / 5, // Desired Number of samples
+    latency     : 46439, // Desired Delay in usec
+    bufferSize  : 2048, // Desired Number of samples
     modPrivate  : 0,
 };
 
@@ -120,8 +120,8 @@ static alsa_handle_t _defaultsIn = {
     format      : SND_PCM_FORMAT_S16_LE, // AudioSystem::PCM_16_BIT
     channels    : 1,
     sampleRate  : AudioRecord::DEFAULT_SAMPLE_RATE,
-    latency     : 250000, // Desired Delay in usec
-    bufferSize  : 2048, // Desired Number of samples
+    latency     : 130000, // Desired Delay in usec
+    bufferSize  : 5733, // Desired Number of samples
     modPrivate  : 0,
 };
 
@@ -235,7 +235,7 @@ status_t setHardwareParams(alsa_handle_t *handle)
         goto done;
     }
 
-    LOGV("Set %s PCM format to %s (%s)", streamName(), formatName, formatDesc);
+    LOGD("Set %s PCM format to %s (%s)", streamName(handle), formatName, formatDesc);
 
     err = snd_pcm_hw_params_set_channels(handle->handle, hardwareParams,
             handle->channels);
@@ -245,8 +245,8 @@ status_t setHardwareParams(alsa_handle_t *handle)
         goto done;
     }
 
-    LOGV("Using %i %s for %s.", handle->channels,
-            handle->channels == 1 ? "channel" : "channels", streamName());
+    LOGD("Using %i %s for %s.", handle->channels,
+            handle->channels == 1 ? "channel" : "channels", streamName(handle));
 
     err = snd_pcm_hw_params_set_rate_near(handle->handle, hardwareParams,
             &requestedRate, 0);
@@ -261,7 +261,7 @@ status_t setHardwareParams(alsa_handle_t *handle)
         LOGW("Requested rate (%u HZ) does not match actual rate (%u HZ)",
                 handle->sampleRate, requestedRate);
     else
-        LOGV("Set %s sample rate to %u HZ", stream, requestedRate);
+        LOGD("Set %s sample rate to %u HZ", streamName(handle), requestedRate);
 
 #ifdef DISABLE_HARWARE_RESAMPLING
     // Disable hardware re-sampling.
@@ -335,8 +335,8 @@ status_t setHardwareParams(alsa_handle_t *handle)
         }
     }
 
-    LOGV("Buffer size: %d", (int)bufferSize);
-    LOGV("Latency: %d", (int)latency);
+    LOGD("Buffer size: %d", (int)bufferSize);
+    LOGD("Latency: %d", (int)latency);
 
     handle->bufferSize = bufferSize;
     handle->latency = latency;
