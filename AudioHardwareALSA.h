@@ -312,7 +312,7 @@ public:
 
     // Returns audio input buffer size according to parameters passed or 0 if one of the
     // parameters is not supported
-    //virtual size_t    getInputBufferSize(uint32_t sampleRate, int format, int channels);
+    virtual size_t    getInputBufferSize(uint32_t sampleRate, int format, int channels);
 
     /** This method creates and opens the audio hardware output stream */
     virtual AudioStreamOut* openOutputStream(

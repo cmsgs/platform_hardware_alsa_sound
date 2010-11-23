@@ -47,6 +47,9 @@ namespace android
 {
 
 // ----------------------------------------------------------------------------
+const uint32_t inputSamplingRates[] = {
+        11025, 16000, 22050, 44100
+};
 
 static void ALSAErrorHandler(const char *file,
                              int line,
@@ -165,6 +168,32 @@ status_t AudioHardwareALSA::setMode(int mode)
     return status;
 }
 
+// use emulated popcount optimization
+// http://www.df.lth.se/~john_e/gems/gem002d.html
+static inline uint32_t popCount(uint32_t u)
+{
+    u = ((u&0x55555555) + ((u>>1)&0x55555555));
+    u = ((u&0x33333333) + ((u>>2)&0x33333333));
+    u = ((u&0x0f0f0f0f) + ((u>>4)&0x0f0f0f0f));
+    u = ((u&0x00ff00ff) + ((u>>8)&0x00ff00ff));
+    u = ( u&0x0000ffff) + (u>>16);
+    return u;
+}
+
+uint32_t getInputSampleRate(uint32_t sampleRate)
+{
+    uint32_t i;
+    uint32_t prevDelta;
+    uint32_t delta;
+
+    for (i = 0, prevDelta = 0xFFFFFFFF; i < sizeof(inputSamplingRates)/sizeof(uint32_t);
+                                                            i++, prevDelta = delta) {
+        delta = abs(sampleRate - inputSamplingRates[i]);
+        if (delta > prevDelta) break;
+    }
+    return inputSamplingRates[i-1];
+}
+
 AudioStreamOut *
 AudioHardwareALSA::openOutputStream(uint32_t devices,
                                     int *format,
@@ -224,6 +253,9 @@ AudioHardwareALSA::openInputStream(uint32_t devices,
     for(ALSAHandleList::iterator it = mDeviceList.begin();
         it != mDeviceList.end(); ++it)
         if (it->devices & devices) {
+            it->channels = popCount(*channels);
+            it->sampleRate = getInputSampleRate(*sampleRate);
+            it->bufferSize = 0.256*it->sampleRate*it->channels;
             err = mALSADevice->open(&(*it), devices, mode());
             if (err) break;
             in = new AudioStreamInALSA(this, &(*it), acoustics);
@@ -260,6 +292,17 @@ status_t AudioHardwareALSA::getMicMute(bool *state)
 status_t AudioHardwareALSA::dump(int fd, const Vector<String16>& args)
 {
     return NO_ERROR;
+}
+
+size_t AudioHardwareALSA::getInputBufferSize(uint32_t sampleRate, int format, int channels)
+{
+    if (format != AudioSystem::PCM_16_BIT) {
+        LOGW("getInputBufferSize bad format: %d", format);
+        return 0;
+    }
+    int buffer = 0.256*getInputSampleRate(sampleRate)*channels;
+    LOGD("getInputBufferSize = %d",buffer);
+    return buffer;
 }
 
 }       // namespace android
