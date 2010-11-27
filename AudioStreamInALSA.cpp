@@ -140,7 +140,7 @@ status_t AudioStreamInALSA::standby()
         release_wake_lock ("AudioInLock");
         mPowerLock = false;
     }
-
+    LOGD("AudioStreamInALSA::standby()");
     return NO_ERROR;
 }
 
