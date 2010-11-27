@@ -159,6 +159,7 @@ status_t AudioStreamOutALSA::standby()
     }
 
     mFrameCount = 0;
+    LOGD("AudioStreamOutALSA::standby()");
 
     return NO_ERROR;
 }
